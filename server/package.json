@@ -1,0 +1,11 @@
+{
+  "name": "kostbar-foto",
+  "version": "1.0.0",
+  "description": "Kostbar: foto af maden -> Claude -> kcal og protein",
+  "type": "module",
+  "main": "index.js",
+  "scripts": { "start": "node index.js" },
+  "engines": { "node": ">=20" },
+  "dependencies": { "@anthropic-ai/sdk": "0.137.0" },
+  "private": true
+}
