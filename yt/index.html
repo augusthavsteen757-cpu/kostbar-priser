@@ -2,6 +2,7 @@
 <title>Kostbar video</title>
 <style>html,body{margin:0;height:100%;background:#000}iframe{border:0;width:100%;height:100%}</style>
 <!-- Kostbar: lille https-side, så YouTube-klip kan spille i iPhone-appen (YouTube kræver en https-afsender, ellers fejl 153). Kun indlejring, intet gemmes. -->
+<body>
 <script>
 var v=(new URLSearchParams(location.search).get('v')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,11);
 if(v){var f=document.createElement('iframe');f.allow='autoplay; encrypted-media; picture-in-picture';f.referrerPolicy='strict-origin-when-cross-origin';f.allowFullscreen=true;
