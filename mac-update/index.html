@@ -1017,6 +1017,15 @@ body.scanning{overflow:hidden}
 .fbig{margin:14px 0 0;font-size:18px}.fbig b{font-size:44px;line-height:1;font-family:var(--display,inherit)}.fbig span{font-size:14px;color:var(--muted)}
 .fsub{margin:2px 0 4px;font-size:17px;font-weight:600}.fgo{margin:14px 0 4px;min-height:54px;font-size:17px}.fmore{margin-top:10px}
 .adaptnote{display:flex;gap:8px;align-items:flex-start;background:var(--accent-soft);color:var(--ink);border-radius:12px;padding:10px 12px;margin:10px 0 0;font-size:14px;line-height:1.4}.adaptnote svg{flex:none;width:18px;height:18px;color:var(--accent);margin-top:1px}
+/* ============ SEKTIONER (v111): tydelige overskrifter, så man kan se, hvor en ny sektion starter ============ */
+.card>h3,.card>.row>h3,.sechead h3,.card>.stack-s>h3:first-child{font-size:21px;font-weight:800;letter-spacing:-.02em;line-height:1.15;margin:0}
+.card>h3::after,.card>.row>h3::after,.sechead h3::after{content:"";display:block;width:30px;height:3px;border-radius:2px;background:var(--accent);margin-top:7px}
+.card>h3{margin-bottom:12px}.card>.row>h3{margin-bottom:4px}
+.card .card>h3,.card .card>.row>h3{font-size:18px;font-weight:700;letter-spacing:-.015em}.card .card>h3::after,.card .card>.row>h3::after{display:none}
+.card .lbl{display:block;margin-top:6px}
+.kat{margin:22px 0 6px;padding-top:14px;border-top:1px solid var(--line);font-size:12px;letter-spacing:.09em;color:var(--accent);opacity:1}
+.card>.kat:first-child,.card>.row+.kat{margin-top:12px;padding-top:0;border-top:0}
+body.trn .card>h3::after,body.trn .card>.row>h3::after{background:var(--accent)}
 </style>
 
 <div class="app">
