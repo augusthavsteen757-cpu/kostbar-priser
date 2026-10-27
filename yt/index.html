@@ -6,5 +6,5 @@
 <script>
 var v=(new URLSearchParams(location.search).get('v')||'').replace(/[^A-Za-z0-9_-]/g,'').slice(0,11);
 if(v){var f=document.createElement('iframe');f.allow='autoplay; encrypted-media; picture-in-picture';f.referrerPolicy='strict-origin-when-cross-origin';f.allowFullscreen=true;
-f.src='https://www.youtube.com/embed/'+v+'?autoplay=1&mute=1&playsinline=1&loop=1&playlist='+v+'&rel=0';document.body.appendChild(f);}
+var q=new URLSearchParams(location.search),st=parseInt(q.get('s')||'0')||0,en=parseInt(q.get('e')||'0')||0;f.src='https://www.youtube.com/embed/'+v+'?autoplay=1&mute=1&playsinline=1&loop=1&playlist='+v+'&rel=0&controls=0&modestbranding=1'+(st?'&start='+st:'')+(en?'&end='+en:'');document.body.appendChild(f);}
 </script>
