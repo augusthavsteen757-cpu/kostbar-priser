@@ -58,8 +58,16 @@ function billede(b64) {
   return null;
 }
 
+// Afsenderens adresse til grænserne pr. adresse. Første del af x-forwarded-for kan afsenderen selv skrive og dermed
+// omgå grænsen, så brug Cloudflares cf-connecting-ip (Render ligger bag Cloudflare), hvis den findes.
+function ipAf(req) {
+  const cf = String(req.headers['cf-connecting-ip'] || req.headers['true-client-ip'] || '').trim();
+  if (cf) return cf;
+  return String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+}
+
 async function foto(req, res, origin) {
-  const t0 = Date.now(), ip = String(req.headers['x-forwarded-for'] || req.socket.remoteAddress || '').split(',')[0].trim();
+  const t0 = Date.now(), ip = ipAf(req);
   const log = (kode, x) => console.log(JSON.stringify({ t: new Date().toISOString(), kode, ms: Date.now() - t0, i_dag: tael.n, ...x }));
   const fejl = (status, kode, x) => { log(kode, x); svar(res, status, { fejl: kode }, origin) };
   if (!key()) return fejl(503, 'not_ready');
