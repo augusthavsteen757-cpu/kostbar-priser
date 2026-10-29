@@ -37,10 +37,10 @@ function svar(res, kode, obj, origin) {
   res.writeHead(kode, h); res.end(obj == null ? '' : JSON.stringify(obj));
 }
 
-function laes(req) {
+function laes(req, max = MAX_BYTES * 1.4 + 4096) {
   return new Promise((ok, nej) => {
     let n = 0; const dele = [];
-    req.on('data', d => { n += d.length; if (n > MAX_BYTES * 1.4 + 4096) { nej(Object.assign(new Error('stor'), { kode: 'too_big' })); req.destroy() } else dele.push(d) });
+    req.on('data', d => { n += d.length; if (n > max) { nej(Object.assign(new Error('stor'), { kode: 'too_big' })); req.destroy() } else dele.push(d) });
     req.on('end', () => ok(Buffer.concat(dele).toString('utf8')));
     req.on('error', nej);
   });
@@ -134,9 +134,10 @@ async function gemGithub(linje) {
 }
 async function pris(req, res, origin) {
   let b;
-  try { b = JSON.parse(await laes(req)) } catch (e) { return svar(res, 400, { fejl: 'bad_request' }, origin) }
-  const p = +b.p;
-  if (!b || !BUTIKKER.has(b.st) || !/^[a-z0-9_]{2,20}$/.test(b.id || '') || !(p > 0 && p < 3000)) return svar(res, 400, { fejl: 'bad_request' }, origin);
+  try { b = JSON.parse(await laes(req, 4096)) } catch (e) { return svar(res, e.kode === 'too_big' ? 413 : 400, { fejl: e.kode || 'bad_request' }, origin) }
+  if (!b || typeof b !== 'object' || Array.isArray(b)) return svar(res, 400, { fejl: 'bad_request' }, origin);
+  const p = typeof b.p === 'number' ? b.p : NaN;
+  if (!BUTIKKER.has(b.st) || !/^[a-z0-9_]{2,20}$/.test(b.id || '') || !(p > 0 && p < 3000)) return svar(res, 400, { fejl: 'bad_request' }, origin);
   if (!prisMaa(ipAf(req))) return svar(res, 429, { fejl: 'rate_limited' }, origin);
   const r = { st: b.st, id: b.id, navn: tekst(b.navn, 60), p: Math.round(p * 100) / 100, pak: tekst(b.pak, 30), tb: !!b.tb, vist: +b.vist > 0 ? Math.round(+b.vist * 100) / 100 : null,
     dato: /^\d{4}-\d\d-\d\d$/.test(b.dato || '') ? b.dato : dag(), postnr: /^\d{4}$/.test(b.postnr || '') ? b.postnr : '', priser: tekst(b.priser, 10), modtaget: new Date().toISOString() };
