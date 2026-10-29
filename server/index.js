@@ -107,6 +107,45 @@ async function foto(req, res, origin) {
   }
 }
 
+// "Forkert pris?" fra indkøbslisten. Rapporten skrives i loggen (Render gemmer den i 7 dage, og den planlagte prisopdatering
+// læser den derfra). Er GITHUB_TOKEN sat, gemmes den også i rapporter/<måned>.jsonl i kostbar-priser.
+const BUTIKKER = new Set(['netto', 'rema', 'lidl', 'foetex', 'bilka', 'coop365', 'kvickly', 'superbrugsen', 'meny', 'aldi', 'spar', 'loevbjerg']);
+const prisLog = new Map(); // ip -> [tidspunkter] i dag
+function prisMaa(ip) {
+  const nu = Date.now(), a = (prisLog.get(ip) || []).filter(x => x > nu - 864e5);
+  if (a.length >= 30) return false;
+  a.push(nu); prisLog.set(ip, a); return true;
+}
+setInterval(() => { const t = Date.now() - 864e5; for (const [ip, a] of prisLog) { const b = a.filter(x => x > t); if (b.length) prisLog.set(ip, b); else prisLog.delete(ip) } }, 6e5).unref();
+const tekst = (v, n) => String(v == null ? '' : v).replace(/[\u0000-\u001f]/g, ' ').trim().slice(0, n);
+async function gemGithub(linje) {
+  const tok = process.env.GITHUB_TOKEN, repo = process.env.GITHUB_REPO || 'augusthavsteen757-cpu/kostbar-priser';
+  if (!tok) return;
+  const sti = `rapporter/${dag().slice(0, 7)}.jsonl`, url = `https://api.github.com/repos/${repo}/contents/${sti}`;
+  const h = { authorization: `Bearer ${tok}`, accept: 'application/vnd.github+json', 'user-agent': 'kostbar-foto' };
+  for (let forsoeg = 0; forsoeg < 3; forsoeg++) {
+    const g = await fetch(url, { headers: h });
+    const j = g.ok ? await g.json() : null;
+    const gammel = j ? Buffer.from(j.content, 'base64').toString('utf8') : '';
+    const p = await fetch(url, { method: 'PUT', headers: h, body: JSON.stringify({ message: 'Prisrapport fra appen', content: Buffer.from(gammel + linje + '\n').toString('base64'), ...(j ? { sha: j.sha } : {}) }) });
+    if (p.ok) return;
+    if (p.status !== 409 && p.status !== 422) { console.error('GitHub', p.status); return }
+  }
+}
+async function pris(req, res, origin) {
+  let b;
+  try { b = JSON.parse(await laes(req)) } catch (e) { return svar(res, 400, { fejl: 'bad_request' }, origin) }
+  const p = +b.p;
+  if (!b || !BUTIKKER.has(b.st) || !/^[a-z0-9_]{2,20}$/.test(b.id || '') || !(p > 0 && p < 3000)) return svar(res, 400, { fejl: 'bad_request' }, origin);
+  if (!prisMaa(ipAf(req))) return svar(res, 429, { fejl: 'rate_limited' }, origin);
+  const r = { st: b.st, id: b.id, navn: tekst(b.navn, 60), p: Math.round(p * 100) / 100, pak: tekst(b.pak, 30), tb: !!b.tb, vist: +b.vist > 0 ? Math.round(+b.vist * 100) / 100 : null,
+    dato: /^\d{4}-\d\d-\d\d$/.test(b.dato || '') ? b.dato : dag(), postnr: /^\d{4}$/.test(b.postnr || '') ? b.postnr : '', priser: tekst(b.priser, 10), modtaget: new Date().toISOString() };
+  const linje = JSON.stringify(r);
+  console.log(JSON.stringify({ kode: 'prisrapport', r }));
+  svar(res, 200, { ok: true }, origin);
+  gemGithub(linje).catch(e => console.error('GitHub', String(e && e.message).slice(0, 200)));
+}
+
 const server = http.createServer(async (req, res) => {
   const origin = req.headers.origin || '';
   const sti = (req.url || '').split('?')[0];
@@ -114,6 +153,7 @@ const server = http.createServer(async (req, res) => {
     if (req.method === 'OPTIONS') return svar(res, 204, null, origin);
     if (req.method === 'GET' && (sti === '/ok' || sti === '/')) return svar(res, 200, { klar: !!key(), model: MODEL }, origin);
     if (req.method === 'POST' && sti === '/foto') return await foto(req, res, origin);
+    if (req.method === 'POST' && sti === '/pris') return await pris(req, res, origin);
     svar(res, 404, { fejl: 'not_found' }, origin);
   } catch (e) { console.error(e); if (!res.headersSent) svar(res, 500, { fejl: 'upstream_error' }, origin) }
 });
