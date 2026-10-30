@@ -107,7 +107,7 @@ async function foto(req, res, origin) {
   }
 }
 
-// "Forkert pris?" fra indkøbslisten. Rapporten skrives i loggen (Render gemmer den i 7 dage, og den planlagte prisopdatering
+// "Forkert pris?" fra indkøbslisten. Ingen oplysninger om brugeren gemmes (heller ikke postnummer, som ældre app-versioner sender). Rapporten skrives i loggen (Render gemmer den i 7 dage, og den planlagte prisopdatering
 // læser den derfra). Er GITHUB_TOKEN sat, gemmes den også i rapporter/<måned>.jsonl i kostbar-priser.
 const BUTIKKER = new Set(['netto', 'rema', 'lidl', 'foetex', 'bilka', 'coop365', 'kvickly', 'superbrugsen', 'meny', 'aldi', 'spar', 'loevbjerg']);
 const prisLog = new Map(); // ip -> [tidspunkter] i dag
@@ -140,7 +140,7 @@ async function pris(req, res, origin) {
   if (!BUTIKKER.has(b.st) || !/^[a-z0-9_]{2,20}$/.test(b.id || '') || !(p > 0 && p < 3000)) return svar(res, 400, { fejl: 'bad_request' }, origin);
   if (!prisMaa(ipAf(req))) return svar(res, 429, { fejl: 'rate_limited' }, origin);
   const r = { st: b.st, id: b.id, navn: tekst(b.navn, 60), p: Math.round(p * 100) / 100, pak: tekst(b.pak, 30), tb: !!b.tb, vist: +b.vist > 0 ? Math.round(+b.vist * 100) / 100 : null,
-    dato: /^\d{4}-\d\d-\d\d$/.test(b.dato || '') ? b.dato : dag(), postnr: /^\d{4}$/.test(b.postnr || '') ? b.postnr : '', priser: tekst(b.priser, 10), modtaget: new Date().toISOString() };
+    dato: /^\d{4}-\d\d-\d\d$/.test(b.dato || '') ? b.dato : dag(), priser: tekst(b.priser, 10), modtaget: new Date().toISOString() };
   const linje = JSON.stringify(r);
   console.log(JSON.stringify({ kode: 'prisrapport', r }));
   svar(res, 200, { ok: true }, origin);
